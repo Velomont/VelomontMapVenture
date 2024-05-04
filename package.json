@@ -1,0 +1,29 @@
+{
+  "name": "vuejs-with-vite",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "@vue-leaflet/vue-leaflet": "^0.10.1",
+    "axios": "^1.6.8",
+    "esri-leaflet": "^3.0.12",
+    "esri-leaflet-vector": "^4.2.3",
+    "esri-leaflet-webmap": "^0.4.0",
+    "leaflet": "^1.9.4",
+    "leaflet-esri-webmap": "^0.2.0",
+    "primeflex": "^3.3.1",
+    "primeicons": "^7.0.0",
+    "primevue": "^3.50.0",
+    "vue": "^3.2.37",
+    "vue-router": "^4.3.0",
+    "vuex": "^4.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^3.0.1",
+    "autoprefixer": "^10.4.13",
+    "vite": "^3.0.1"
+  }
+}

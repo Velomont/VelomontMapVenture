@@ -1,0 +1,73 @@
+@import "primeicons/primeicons.css";
+
+html {
+  font-size: 18px;
+}
+
+body {
+  min-height: 100vh;
+  max-width: 100vw;
+  color: #fff;
+  background: radial-gradient(
+      135.35% 140.89% at 107.72% -60.35%,
+      rgba(65, 184, 131, 0.4) 0%,
+      rgba(5, 4, 31, 0) 100%
+    ),
+    #ffffff;
+  margin: 0 auto;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.6;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+.card {
+  background: var(--surface-card);
+  padding: 2rem;
+  border-radius: 10px;
+
+  position: relative;
+}
+
+p {
+  line-height: 1.75;
+}
+
+.main-wrapper {
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: contain;
+}
+
+.custom-hut-icon .material-symbols-sharp {
+  font-size: 24px;
+  color: #46a085;
+  background: #fff;
+  outline: 1px solid #46a085;
+  border-radius: 20%;
+  filter: drop-shadow(1px 1px 3px rgba(19, 99, 70, 0.55));
+}
+
+.custom-icon-other-houses::before {
+  font-family: 'Material Icons Sharp';
+  content: 'other_houses'; 
+  speak: never;
+  display: inline-block;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 24px; 
+}
