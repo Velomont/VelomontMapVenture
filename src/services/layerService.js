@@ -26,27 +26,28 @@ export default {
   },
 
   // Function to add the vector tile labels
-addVectorTileLabels(map, itemId) {
+  addVectorTileLabels(map, itemId) {
     if (L.esri && L.esri.Vector) {
+      // Create a new pane for the labels if it does not exist already
       if (!map.getPane('labels')) {
         map.createPane('labels');
         map.getPane('labels').style.zIndex = 650;
-        map.getPane('labels').style.pointerEvents = 'none'; // Ensures the pane doesn't interfere with map interaction
       }
 
-      let labelsLayer = L.esri.Vector.vectorBasemapLayer(itemId, {
+      const labelsLayer = L.esri.Vector.vectorBasemapLayer(itemId, {
         apiKey: apiKey, // Pass the API key
-        pane: 'labels', // Specify the custom pane for the labels
+        pane: 'labels', // Use the custom pane for labels
         style: (style) => {
+          // Customize the style to filter for label layers only
           const newStyle = {...style};
           newStyle.layers = newStyle.layers.filter(layer => layer.id.includes('label') || layer.type === 'symbol');
           return newStyle;
         }
       });
 
-      function updateLabelsVisibility() {
-        const zoom = map.getZoom();
-        if (zoom >= 15) {
+      // Function to update the visibility of labels based on zoom level
+      const updateLabelVisibility = () => {
+        if (map.getZoom() > 9) {
           if (!map.hasLayer(labelsLayer)) {
             labelsLayer.addTo(map);
           }
@@ -55,19 +56,19 @@ addVectorTileLabels(map, itemId) {
             map.removeLayer(labelsLayer);
           }
         }
-      }
+      };
 
-      // Initial check to add/remove labels based on initial zoom
-      updateLabelsVisibility();
+      // Attach the function to the zoomend event to handle zoom changes
+      map.on('zoomend', updateLabelVisibility);
 
-      // Add an event listener to control label visibility based on zoom level
-      map.on('zoomend', updateLabelsVisibility);
+      // Initially update the label visibility based on the current zoom level
+      updateLabelVisibility();
     } else {
       console.error('Esri Leaflet Vector library is not loaded.');
     }
   },
-  // Function to add corridor mask layer using a feature layer
 
+  
    addCorridorMaskLayer(map) {
       if (L.esri) {
         map.createPane('corridorMask');
@@ -94,7 +95,8 @@ addVectorTileLabels(map, itemId) {
 
           const pane = map.getPane('corridorMask');
           if (pane) {
-            console.log("Applying blur:", updatedStyles.blur);  // Debugging the blur value
+            console.log("Applying blur:", updatedStyles.blur);  
+            console.log("Current zoom:", map.getZoom());
             pane.style.filter = `blur(${updatedStyles.blur})`;
           }
         });
@@ -129,22 +131,22 @@ addVectorTileLabels(map, itemId) {
               fillOpacity = 0.7;
               break;
           case 11:
-              blurIntensity = "30px";
+              blurIntensity = "50px";
               opacity = 0.4;
               fillOpacity = 0.4;
               break;
           case 12:
-              blurIntensity = "40px";
+              blurIntensity = "250px";
               opacity = 0.2;
               fillOpacity = 0.2;
               break;
           case 13:
-              blurIntensity = "50px";  // No blur as layer becomes invisible
+              blurIntensity = "400px";  // No blur as layer becomes invisible
               opacity = 0.01;
               fillOpacity = 0.01;
               break;
           default:
-              blurIntensity = "100px";  // Ensure layer remains invisible
+              blurIntensity = "800px";  // Ensure layer remains invisible
               opacity = 0.01;
               fillOpacity = 0.01;
               break;
@@ -153,20 +155,18 @@ addVectorTileLabels(map, itemId) {
   },
   // Function to add Vermont mask layer using a feature layer
   addVermontMaskLayer(map) {
-    if (L.esri) {
-      const vermontMaskUrl = 'https://services5.arcgis.com/Uzks6LSde6r23wwG/arcgis/rest/services/Vermont_Mask/FeatureServer/0';
-      L.esri.featureLayer({
-        url: vermontMaskUrl,
-        token: apiKey, // Pass the API key [0]
-        style: () => ({
-          color: '#FFFFFF', // Example style, adjust as needed
-          weight: 3,
-          opacity: 1,
-          fillOpacity: 0.8
-        })
+    if (L.esri && L.esri.Vector) {
+      const vermontMaskVectorTileUrl = 'https://vectortileservices8.arcgis.com/YKIZLV97YLZN6bol/arcgis/rest/services/VermontMask_Simple/VectorTileServer';
+
+      // Define the style object directly
+ 
+
+      L.esri.Vector.vectorTileLayer(vermontMaskVectorTileUrl, {
+        apiKey: apiKey,
+       
       }).addTo(map);
     } else {
       console.error('Esri Leaflet library is not loaded.');
     }
-  },
+  }
 };

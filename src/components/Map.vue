@@ -1,14 +1,13 @@
-<!-- src/components/Map.vue -->
 <template>
   <div id="map-container">
-
-      
     <Sidebar v-model:visible="visible" position="left">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
     </Sidebar>
-    <ToggleButton v-model="visible" onLabel="On" offLabel="Off" />
+    <div id="map-header">
+      <ToggleButton v-model="visible" onLabel="On" offLabel="Off" />
+      <InputSwitch label="Remember Me" />
+    </div>
     <div id="map"></div>
-
     <div id="map-controls-container">
       <Button icon="pi pi-plus" @click="zoomIn" />
       <Button icon="pi pi-minus" @click="zoomOut" />
@@ -19,49 +18,38 @@
 
 <script>
 import L from 'leaflet';
-import '/node_modules/esri-leaflet/dist/esri-leaflet.js';
-import '/node_modules/esri-leaflet-vector/dist/esri-leaflet-vector.js';
-
+import 'esri-leaflet';
+import 'esri-leaflet-vector';
 import { mapState, mapActions, mapGetters } from 'vuex';
 import mapService from '@/services/mapService';
-import FilterMenu from './FilterMenu.vue';
-//import trailforksService from '@/services/trailforksService';
-import layerService from '../services/layerService';
+import TrailPopup from './TrailPopup.vue';
+import HutPopup from './HutPopup.vue';
 import Button from 'primevue/button';
 import Sidebar from 'primevue/sidebar';
-import Dropdown from 'primevue/dropdown';
 import ToggleButton from 'primevue/togglebutton';
-import { ref } from "vue";
-
-
+import InputSwitch from 'primevue/inputswitch';
 
 export default {
   name: 'Map',
   components: {
-    FilterMenu,
+    TrailPopup,
+    HutPopup,
     Button,
     Sidebar,
-    Dropdown,
     ToggleButton,
+    InputSwitch,
   },
   data() {
     return {
-      showFilterMenu: false,
-      visibleLeft: false,
       visible: false,
-    
     };
   },
   computed: {
     ...mapGetters({
-       hutsData: 'huts/hutsData',
+      hutsData: 'huts/hutsData',
       filteredTrails: 'trails/filteredTrails',
-      
-      
     }),
-
-     ...mapState('trails', ['selectedTypes', 'selectedDifficulties']),
-    
+    ...mapState('trails', ['selectedTypes', 'selectedDifficulties']),
     trailTypes() {
       return ['Single Track', 'Double Track', 'Road'];
     },
@@ -72,30 +60,20 @@ export default {
   mounted() {
     this.map = mapService.initMap();
     this.map.on('zoomend moveend', this.handleMapChange);
-    trailforksService.init(this.map);
     this.fetchHutsData();
     this.fetchTrailData();
-    this.handleMapChange();
-    this.fetchTrailforksData();
-    layerService.addVectorTileBasemap(this.map);
-    //layerService.addVectorTileLabels(this.map);
-    layerService.addCorridorMaskLayer(this.map);
-    layerService.addVermontMaskLayer(this.map);
+    this.$store.subscribe((mutation, state) => {
+      if (mutation.type === 'huts/SET_HUTS_LAYER') {
+        mapService.renderHutsLayer(this.map);
+      }
+      if (mutation.type === 'trails/SET_TRAIL_LAYER') {
+        mapService.renderTrailLayer(this.map);
+      }
+    });
   },
   methods: {
-    ...mapActions('trails', ['fetchTrailData', 'setSelectedTypes', 'setSelectedDifficulties']),
+    ...mapActions('trails', ['fetchTrailData']),
     ...mapActions('huts', ['fetchHutsData']),
-    ...mapActions('trailforks', ['fetchTrailforksData']),
-
-     handleTypeChange() {
-        this.setSelectedTypes(this.selectedTypes);
-        this.fetchTrailData();
-      },
-    handleDifficultyChange() {
-    this.setSelectedDifficulties(this.selectedDifficulties);
-        this.fetchTrailData();
-      },
-    
     zoomIn() {
       this.map.zoomIn();
     },
@@ -110,41 +88,30 @@ export default {
       if (zoomLevel >= 12) {
         const bounds = this.map.getBounds();
         const paddedBounds = bounds.pad(1);
-        this.fetchTrailforksData({
-          bounds: {
-            southWest: paddedBounds.getSouthWest(),
-            northEast: paddedBounds.getNorthEast()
-          },
-          zoomLevel
-        });
+        // Optional data fetching based on bounds
       }
-    },
-  },
-  watch: {
-    '$store.state.trails.trailLayer'() {
-      mapService.renderTrailLayer(this.map);
-    },
-    '$store.state.huts.hutsLayer'() {
-      mapService.renderHutsLayer(this.map);
-    },
-    '$store.state.trailforks.trailforksData'() {
-      trailforksService.renderTrailforksLayer(this.map);
     },
   },
 };
 </script>
 
 <style scoped>
-  #map-container {
-    position: relative;
-    width: 100%;
-    height: 720px;
-  }
+#map-header {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 3rem;
+  background-color: #538843;
+}
+#map-container {
+  position: relative;
+  width: 100%;
+  height: 720px;
+}
 #map {
   width: 100%;
   height: 100%;
 }
-
 #map-controls-container {
   position: absolute;
   top: 60px;
@@ -155,28 +122,7 @@ export default {
   gap: 10px;
 }
 
-#select-button-container {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
-}
-
-.filter-menu {
-  padding: 1rem;
-}
-
-.filter-section {
-  margin-bottom: 1rem;
-}
-
-.filter-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
+ 
+ 
+  
 </style>

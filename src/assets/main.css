@@ -1,5 +1,6 @@
 @import "primeicons/primeicons.css";
 
+
 html {
   font-size: 18px;
 }
@@ -37,6 +38,7 @@ body {
   position: relative;
 }
 
+
 p {
   line-height: 1.75;
 }
@@ -71,3 +73,4 @@ p {
   -moz-osx-font-smoothing: grayscale;
   font-size: 24px; 
 }
+
