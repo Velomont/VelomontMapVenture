@@ -1,4 +1,4 @@
-run = "vite"
+run = "npm run dev"
 entrypoint = "src/App.vue"
 
 hidden = [".config", "tsconfig.json", "tsconfig.node.json", "vite.config.js", ".gitignore"]
@@ -31,18 +31,10 @@ pattern = "**/{*.js,*.jsx,*.ts,*.tsx}"
 start = "./node_modules/.bin/typescript-language-server --stdio"
 
 [[ports]]
-localPort = 4173
-externalPort = 3001
-
-[[ports]]
 localPort = 5173
 externalPort = 80
 
-[[ports]]
-localPort = 5174
-externalPort = 3000
-
-[[ports]]
-localPort = 8284
-externalPort = 3002
-exposeLocalhost = true
+[deployment]
+deploymentTarget = "static"
+publicDir = "./"
+build = ["sh", "-c", "npm run dev"]

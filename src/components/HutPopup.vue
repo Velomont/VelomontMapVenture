@@ -1,6 +1,6 @@
 <!-- src/components/HutPopup.vue -->
 <template>
-  <div class="p-4 font-sans">
+  <div>
     <h4 class="mb-2 text-lg font-bold">{{ name }}</h4>
     <p class="mb-1 text-sm">Partner: {{ partner || 'N/A' }}</p>
     <p class="mb-2 text-sm">Popup Info: {{ popupInfo || 'N/A' }}</p>

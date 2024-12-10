@@ -1,17 +1,31 @@
 <template>
-  <div id="map-container">
-    <Sidebar v-model:visible="visible" position="left">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-    </Sidebar>
-    <div id="map-header">
-      <ToggleButton v-model="visible" onLabel="On" offLabel="Off" />
-      <InputSwitch label="Remember Me" />
-    </div>
-    <div id="map"></div>
-    <div id="map-controls-container">
-      <Button icon="pi pi-plus" @click="zoomIn" />
-      <Button icon="pi pi-minus" @click="zoomOut" />
-      <Button icon="pi pi-map" @click="resetToHomeView" />
+  <div id="app-container">
+    <Toolbar id="map-header" style="padding: 0.5rem 1rem; margin-bottom: 10px;">
+      <template #start>
+        <!-- Add any start content for the toolbar here -->
+      </template>
+    </Toolbar>
+    <div id="map-container">
+      <Card id="sidebar" style="width: 310px;">
+        <template #title>
+          <!-- Add any title content for the sidebar here -->
+        </template>
+        <template #content>
+          <BusinessFilter @filterChanged="handleFilterChange" @toggleVisibility="toggleBusinessLayerVisibility" />
+           <PlacesFilter />
+          <SidebarPopup />
+        </template>
+      </Card>
+      <Card id="map-card" style="flex-grow: 1;">
+        <template #content>
+          <div id="map" style="width: 100%; height: 100%;"></div>
+          <div id="map-controls-container">
+            <Button icon="pi pi-plus" @click="zoomIn" />
+            <Button icon="pi pi-minus" @click="zoomOut" />
+            <Button icon="pi pi-map" @click="resetToHomeView" />
+          </div>
+        </template>
+      </Card>
     </div>
   </div>
 </template>
@@ -20,101 +34,246 @@
 import L from 'leaflet';
 import 'esri-leaflet';
 import 'esri-leaflet-vector';
-import { mapState, mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import mapService from '@/services/mapService';
-import TrailPopup from './TrailPopup.vue';
-import HutPopup from './HutPopup.vue';
+import businessService from '@/services/businessService';
+import hutService from '@/services/hutService';
+import poiService from '@/services/poiService';
+import routeService from '@/services/routeService';
+import trailforksService from '@/services/trailforksService';
+import veloSimpleService from '@/services/velo-simple-service';
 import Button from 'primevue/button';
-import Sidebar from 'primevue/sidebar';
-import ToggleButton from 'primevue/togglebutton';
-import InputSwitch from 'primevue/inputswitch';
+import Card from 'primevue/card';
+import Toolbar from 'primevue/toolbar';
+import SidebarPopup from './SidebarPopup.vue';
+import BusinessFilter from './BusinessFilter.vue';
+import PlacesFilter from './PlacesFilter.vue';
+import { debounce } from 'lodash';
 
 export default {
   name: 'Map',
   components: {
-    TrailPopup,
-    HutPopup,
     Button,
-    Sidebar,
-    ToggleButton,
-    InputSwitch,
+    Card,
+    Toolbar,
+    SidebarPopup,
+    BusinessFilter,
+    PlacesFilter,
   },
   data() {
     return {
+      map: null,
+      poiLayers: null,
       visible: false,
     };
   },
   computed: {
     ...mapGetters({
       hutsData: 'huts/hutsData',
-      filteredTrails: 'trails/filteredTrails',
+      bikeTrails: 'trailforks/bikeTrails',
+      otherTrails: 'trailforks/otherTrails',
     }),
-    ...mapState('trails', ['selectedTypes', 'selectedDifficulties']),
-    trailTypes() {
-      return ['Single Track', 'Double Track', 'Road'];
-    },
-    trailDifficulties() {
-      return ['Easy', 'More Difficult', 'Very Difficult', 'Extremely Difficult'];
-    },
+    ...mapState('trailforks', ['fetchStatus'])
+  },
+  created() {
+    this.debouncedHandleMapChange = debounce(this.handleMapChange, 300);
   },
   mounted() {
-    this.map = mapService.initMap();
-    this.map.on('zoomend moveend', this.handleMapChange);
-    this.fetchHutsData();
-    this.fetchTrailData();
-    this.$store.subscribe((mutation, state) => {
-      if (mutation.type === 'huts/SET_HUTS_LAYER') {
-        mapService.renderHutsLayer(this.map);
+    this.initMap();
+    this.initializeData();
+
+    // Watch for changes in POI data
+    this.$store.watch(
+      (state) => state.poi,
+      () => {
+        this.updatePOILayers();
       }
-      if (mutation.type === 'trails/SET_TRAIL_LAYER') {
-        mapService.renderTrailLayer(this.map);
+    );
+
+    // Subscribe to mutations
+    this.$store.subscribe((mutation, state) => {
+      switch (mutation.type) {
+        case 'huts/SET_HUTS_LAYER':
+          hutService.renderHutsLayer(this.map);
+          break;
+        case 'route/SET_ROUTE_DATA':
+          routeService.renderRouteLayer(this.map);
+          break;
+        case 'businesses/setBusinesses':
+          businessService.renderBusinessLayer(this.map, false);
+          break;
+        case 'trailforks/SET_BIKE_TRAILS':
+        case 'trailforks/SET_OTHER_TRAILS':
+          this.updateVisibleTrails();
+          break;
+        case 'poi/SET_FILTERED_PLACES':
+          this.updatePOILayers();
+          break;
       }
     });
   },
+  beforeDestroy() {
+    if (this.map) {
+      this.map.off('zoomend moveend', this.debouncedHandleMapChange);
+    }
+    hutService.removeLayer(this.map);
+  },
+  watch: {
+    fetchStatus(newStatus) {
+      if (newStatus === 'success') {
+        this.updateVisibleTrails();
+      }
+    }
+  },
   methods: {
-    ...mapActions('trails', ['fetchTrailData']),
     ...mapActions('huts', ['fetchHutsData']),
+    ...mapActions('businesses', ['fetchBusinesses']),
+    ...mapActions('route', ['fetchRouteData']),
+    ...mapActions('trailforks', ['fetchTrailforksData']),
+    ...mapActions('poi', ['fetchPOIData']),
+    ...mapActions('veloSimple', ['fetchVeloSimpleData']),
+
+
+    initMap() {
+      this.map = mapService.initMap();
+      this.map.on('zoomend moveend', this.debouncedHandleMapChange);
+    },
+
+    async initializeData() {
+      await this.fetchTrailforksData();
+      await Promise.all([
+        this.fetchHutsData(),
+        this.fetchBusinesses(),
+        this.fetchRouteData(),
+        this.fetchPOIData(),
+        this.fetchVeloSimpleData(),
+      ]);
+      this.initializeLayers();
+    },
+
+    initializeLayers() {
+      hutService.renderHutsLayer(this.map);
+      routeService.renderRouteLayer(this.map);
+      businessService.renderBusinessLayer(this.map, false);
+      this.updateVisibleTrails();
+      this.updatePOILayers();
+      veloSimpleService.renderVeloSimpleLayer(this.map); // Add this line
+      const legend = veloSimpleService.createLegend();
+      legend.addTo(this.map);
+    },
+
+    updatePOILayers() {
+      poiService.updatePOILayers(this.map);
+    },
+
+    handleFilterChange(category) {
+      this.$store.commit('businesses/setCurrentFilter', category);
+      this.$nextTick(() => {
+        businessService.updateBusinessLayer(this.map);
+      });
+    },
+
+    toggleBusinessLayerVisibility(show) {
+      businessService.updateBusinessLayer(this.map, show);
+    },
+
+    toggleVeloSimpleLayerVisibility(show) {
+      const interactiveLayers = mapService.getInteractiveLayers();
+      const veloSimpleLayer = interactiveLayers.getLayers().find(layer => layer.feature && layer.feature.properties.Status);
+      if (show) {
+        if (veloSimpleLayer && !this.map.hasLayer(veloSimpleLayer)) {
+          interactiveLayers.addLayer(veloSimpleLayer);
+        }
+      } else {
+        if (veloSimpleLayer && this.map.hasLayer(veloSimpleLayer)) {
+          interactiveLayers.removeLayer(veloSimpleLayer);
+        }
+      }
+    },
+    
+    updateVisibleTrails() {
+      if (this.bikeTrails && this.otherTrails && this.map) {
+        trailforksService.renderTrailforksLayers(this.map, this.bikeTrails, this.otherTrails);
+      } else {
+        trailforksService.clearTrailforksLayers(this.map);
+      }
+    },
+
     zoomIn() {
       this.map.zoomIn();
     },
+
     zoomOut() {
       this.map.zoomOut();
     },
+
     resetToHomeView() {
       this.map.setView([44.5, -72.5], 9);
     },
+
     handleMapChange() {
-      const zoomLevel = this.map.getZoom();
-      if (zoomLevel >= 12) {
-        const bounds = this.map.getBounds();
-        const paddedBounds = bounds.pad(1);
-        // Optional data fetching based on bounds
-      }
+      this.updateVisibleTrails();
     },
   },
 };
 </script>
 
+
+
+
+
+
 <style scoped>
+#app-container {
+  max-width: 1600px;
+  max-height: 900px;
+  width: 100%;
+  height: 100vh; /* Change to viewport height */
+  margin: 0 auto;
+  border: 10px solid #FFFFF3;
+  display: flex;
+  flex-direction: column;
+}
+
 #map-header {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
-  height: 3rem;
-  background-color: #538843;
+  padding: 10px; /* Adjusted padding for a smaller header */
 }
+
 #map-container {
-  position: relative;
-  width: 100%;
-  height: 720px;
-}
-#map {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   height: 100%;
 }
+
+#sidebar {
+  height: 100%; /* Make the sidebar take up the full height */
+  overflow-y: auto; /* Enable scrolling within the sidebar */
+  background-color: #FFFFFF; /* Use the secondary color for background */
+  color: #474747; /* Use the tertiary color for text */
+}
+
+#map-card {
+  position: relative;  
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
 #map-controls-container {
   position: absolute;
-  top: 60px;
+  top: 20px;
   right: 20px;
   z-index: 1000;
   display: flex;
@@ -122,7 +281,24 @@ export default {
   gap: 10px;
 }
 
- 
- 
-  
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  background-color: #164351; /* Background color for the logo and text */
+  padding: 2px 8px; /* Padding around the logo and text */
+  border-radius: 3px; /* Optional: for rounded corners */
+}
+
+.logo {
+  width: 2.5rem; /* Adjust the logo size */
+  height: auto;
+  margin-right: 8px;
+}
+
+.partners-text {
+  font-size: 1rem; /* Make the text as tall as the image */
+  font-weight: bold;
+  text-transform: uppercase; /* Uppercase text */
+  color: #FFFFFF; /* White color for the text */
+}
 </style>

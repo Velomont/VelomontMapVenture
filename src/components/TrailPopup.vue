@@ -1,6 +1,5 @@
-<!-- src/components/TrailPopup.vue -->
 <template>
-  <div class="p-4 font-sans">
+  <div>
     <h4 class="mb-2 text-lg font-bold">{{ trailName || 'N/A' }}</h4>
     <p class="mb-1 text-sm">Trail Type: {{ trailType || 'N/A' }}</p>
     <p class="mb-1 text-sm">Trail Manager: {{ trailManager || 'N/A' }}</p>
@@ -12,37 +11,24 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
   name: 'TrailPopup',
-  props: {
-    trailType: {
-      type: String,
-      default: null,
-    },
-    trailName: {
-      type: String,
-      default: null,
-    },
-    trailManager: {
-      type: String,
-      default: null,
-    },
-    phase: {
-      type: String,
-      default: null,
-    },
-    difficultyRating: {
-      type: String,
-      default: null,
-    },
-    constructionStatus: {
-      type: String,
-      default: null,
-    },
-    miles: {
-      type: Number,
-      default: null,
-    },
+  computed: {
+    ...mapGetters('selectedFeature', [
+      'trailType',
+      'trailName',
+      'trailManager',
+      'phase',
+      'difficultyRating',
+      'constructionStatus',
+      'miles',
+    ]),
   },
 };
 </script>
+
+<style scoped>
+/* Add your styles here */
+</style>

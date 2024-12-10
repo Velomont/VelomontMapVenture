@@ -1,43 +1,63 @@
-@import "primeicons/primeicons.css";
+:root {
+  --mdc-typography-font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+}
 
+.p-label {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.p-component {
+  font-family: 'Montserrat', sans-serif;
+  border-radius: 0px;
+}
+
+.material-symbols {
+  font-family: 'Material Symbols Sharp', sans-serif;
+}
 
 html {
   font-size: 18px;
+  font-family: 'Montserrat', sans-serif;
 }
 
 body {
   min-height: 100vh;
   max-width: 100vw;
+  font-family: 'Montserrat', sans-serif;
   color: #fff;
-  background: radial-gradient(
-      135.35% 140.89% at 107.72% -60.35%,
-      rgba(65, 184, 131, 0.4) 0%,
-      rgba(5, 4, 31, 0) 100%
-    ),
-    #ffffff;
-  margin: 0 auto;
   width: 100%;
   font-size: 14px;
   font-weight: 400;
   margin: 0;
   line-height: 1.6;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 .card {
   background: var(--surface-card);
   padding: 2rem;
   border-radius: 10px;
-
   position: relative;
 }
 
+.sidebar-card {
+  padding: 0.5rem;
+}
+
+
+
+.sidebar-popup h4 {
+  font-size: 1rem;
+  margin-block-start: 0.5em; /* Adjust to desired top margin */
+  margin-block-end: 0.5em;   /* Adjust to desired bottom margin */
+  font-weight: bold;
+  font-style: uppercase;
+  color: #548541;
+  text-transform: uppercase;
+}
 
 p {
   line-height: 1.75;
@@ -74,3 +94,33 @@ p {
   font-size: 24px; 
 }
 
+@keyframes pulse-opacity {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+.pulsating-opacity {
+  animation: pulse-opacity 2s infinite;
+}
+
+/* #map-container, #map-card, #map {
+  border: 1px solid red; 
+}*/
+
+.velomont-route {
+  stroke-dasharray: 10, 10;
+  animation: dash 20s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 1000;
+  }
+}
