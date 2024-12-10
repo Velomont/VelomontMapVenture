@@ -1,5 +1,6 @@
+
 run = "npm run dev"
-entrypoint = "/index.html"
+entrypoint = "index.html"
 
 hidden = [".config", "tsconfig.json", "tsconfig.node.json", "vite.config.js", ".gitignore"]
 
@@ -36,5 +37,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "static"
-publicDir = "./"
-build = ["sh", "-c", "npm run dev"]
+publicDir = "dist"
+build = ["sh", "-c", "npm run build"]
