@@ -1,6 +1,5 @@
 run = "npm run dev"
-entrypoint = "src/App.vue"
-
+entrypoint = "/index.html"
 hidden = [".config", "tsconfig.json", "tsconfig.node.json", "vite.config.js", ".gitignore"]
 
 [nix]
